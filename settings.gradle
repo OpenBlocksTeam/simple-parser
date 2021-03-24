@@ -1,2 +1,4 @@
+include ':module-interface'
 include ':app'
+project(':module-interface').projectDir = new File(rootDir, 'openblocks-module-interface/lib/')
 rootProject.name = "simple-parser"
