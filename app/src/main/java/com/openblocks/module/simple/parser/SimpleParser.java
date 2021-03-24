@@ -119,7 +119,71 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
     @NonNull
     @Override
     public OpenBlocksCode parseCode(OpenBlocksRawProject project) throws ParseException {
-        return null;
+        String code_data = null;
+
+        for (OpenBlocksFile file : project.files) {
+            if (file.name.equals("code")) {
+                code_data = new String(file.data, StandardCharsets.UTF_8);
+                break;
+            }
+        }
+
+        if (code_data == null) {
+            throw new ParseException("code file doesn't exist");
+        }
+
+        OpenBlocksCode parsed_code;
+
+        try {
+            ArrayList<BlockCode> block_codes = new ArrayList<>();
+
+            JSONObject code = new JSONObject(code_data);
+            JSONArray blocks = code.getJSONArray("blocks");
+
+            for (int i = 0; i < blocks.length(); i++) {
+                block_codes.add(parseBlockCode(blocks.getJSONObject(i)));
+            }
+
+            parsed_code = new OpenBlocksCode(null, block_codes);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+            
+            throw new ParseException("JSONObject failed to parse layout data: " + e.getMessage());
+        }
+
+        return parsed_code;
+    }
+
+    private BlockCode parseBlockCode(JSONObject object) throws JSONException {
+        BlockCode blockCode = null;
+        String opcode;
+        ArrayList<String> params = new ArrayList<>();
+
+        opcode = object.getString("opcode");
+
+        JSONArray params_array = object.getJSONArray("params");
+
+        for (int i = 0; i < params_array.length(); i++) {
+            params.add((String) params_array.get(i));
+        }
+        
+        if (object.has("childs")) {
+            ArrayList<BlockCode> childs = new ArrayList<>();
+            
+            JSONArray childs_array = object.getJSONArray("childs");
+
+            for (int i = 0; i < childs_array.length(); i++) {
+                childs.add(parseBlockCode(childs_array.getJSONObject(i)));
+            }
+
+            blockCode = new BlockCodeNest(opcode, params, childs);
+            
+        } else {
+            blockCode = new BlockCode(opcode, params);
+        }
+
+        return blockCode;
     }
 
     @NonNull
@@ -204,7 +268,7 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
         JSONObject block_json = new JSONObject();
 
         block_json.put("opcode", block.opcode);
-        block_json.put("params", block.parameters);
+        block_json.put("params", new JSONArray(block.parameters));
 
         if (block instanceof BlockCodeNest) {
             JSONArray childs = new JSONArray();
