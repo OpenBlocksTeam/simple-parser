@@ -1,6 +1,7 @@
 package com.openblocks.module.simple.parser;
 
 import android.content.Context;
+import android.text.PrecomputedText;
 
 import androidx.annotation.NonNull;
 
@@ -20,7 +21,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class SimpleParser implements OpenBlocksModule.ProjectParser {
 
@@ -31,7 +34,7 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
 
     @Override
     public void initialize(Context context, Logger logger) {
-
+        logger.trace(this.getClass(), "Initialize!");
     }
 
     @Override
@@ -44,13 +47,72 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
 
     @Override
     public String generateFreeId(ArrayList<String> existing_ids) {
-        return null;
+
+        String id;
+
+        do {
+            id = UUID.randomUUID().toString();
+        } while (!existing_ids.contains(id));
+
+        return id;
     }
 
     @NonNull
     @Override
     public OpenBlocksLayout parseLayout(OpenBlocksRawProject project) throws ParseException {
-        return null;
+
+        String layout_data = null;
+
+        for (OpenBlocksFile file : project.files) {
+            if (file.name.equals("layout")) {
+                layout_data = new String(file.data, StandardCharsets.UTF_8);
+                break;
+            }
+        }
+
+        if (layout_data == null) {
+            throw new ParseException("layout file doesn't exist");
+        }
+
+        OpenBlocksLayout parsed_layout;
+
+        try {
+            parsed_layout = parseLayout(new JSONObject(layout_data));
+        } catch (JSONException e) {
+            e.printStackTrace();
+            throw new ParseException("JSONObject failed to parse layout data: " + e.getMessage());
+        }
+
+        return parsed_layout;
+    }
+
+    private OpenBlocksLayout parseLayout(JSONObject layout) throws JSONException {
+        ArrayList<LayoutViewXMLAttribute> attributes = new ArrayList<>();
+        ArrayList<OpenBlocksLayout> childs = new ArrayList<>();
+        String view_name;
+
+        view_name = layout.getString("name");
+
+        JSONArray attributes_json = layout.getJSONArray("attributes");
+        for (int i = 0; i < attributes_json.length(); i++) {
+            JSONObject attribute = attributes_json.getJSONObject(i);
+            attributes.add(
+                    new LayoutViewXMLAttribute(
+                            attribute.getString("prefix"),
+                            attribute.getString("name"),
+                            attribute.get("value")
+                    )
+            );
+        }
+
+        JSONArray childs_array = layout.getJSONArray("childs");
+        for (int i = 0; i < childs_array.length(); i++) {
+            JSONObject child = childs_array.getJSONObject(i);
+
+            childs.add(parseLayout(child));
+        }
+
+        return new OpenBlocksLayout(childs, view_name, attributes);
     }
 
     @NonNull
@@ -148,10 +210,11 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
 
     private JSONObject serializeLayoutChild(OpenBlocksLayout layout) throws JSONException {
         JSONObject object = new JSONObject();
-        object.put("view_name", layout.view_name);
+        object.put("name", layout.view_name);
 
         JSONArray parent_attributes = new JSONArray();
 
+        // Yes this is very unoptimized, this module is just for testing
         for (LayoutViewXMLAttribute xml_attribute : layout.xml_attributes) {
             JSONObject attributes = new JSONObject();
             attributes.put("prefix", xml_attribute.prefix);
