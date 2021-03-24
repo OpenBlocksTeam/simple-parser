@@ -12,6 +12,7 @@ import com.openblocks.moduleinterface.models.OpenBlocksFile;
 import com.openblocks.moduleinterface.models.OpenBlocksProjectMetadata;
 import com.openblocks.moduleinterface.models.OpenBlocksRawProject;
 import com.openblocks.moduleinterface.models.code.BlockCode;
+import com.openblocks.moduleinterface.models.code.BlockCodeNest;
 import com.openblocks.moduleinterface.models.config.OpenBlocksConfig;
 import com.openblocks.moduleinterface.models.layout.LayoutViewXMLAttribute;
 import com.openblocks.moduleinterface.projectfiles.OpenBlocksCode;
@@ -190,18 +191,32 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
         JSONArray array = new JSONArray();
 
         for (BlockCode block : code.blocks) {
-
-            JSONObject block_json = new JSONObject();
-
-            block_json.put("opcode", block.opcode);
-            block_json.put("params", block.parameters);
-
-            array.put(block_json);
+            array.put(serializeBlockCode(block));
         }
 
         object.put("blocks", array);
 
         return object.toString();
+    }
+
+    private JSONObject serializeBlockCode(BlockCode block) throws JSONException {
+
+        JSONObject block_json = new JSONObject();
+
+        block_json.put("opcode", block.opcode);
+        block_json.put("params", block.parameters);
+
+        if (block instanceof BlockCodeNest) {
+            JSONArray childs = new JSONArray();
+
+            for (BlockCode blockCode : ((BlockCodeNest) block).blocks) {
+                childs.put(serializeBlockCode(blockCode));
+            }
+
+            block_json.put("childs", childs);
+        }
+
+        return block_json;
     }
 
     private String serializeLayout(OpenBlocksLayout layout) throws JSONException {
