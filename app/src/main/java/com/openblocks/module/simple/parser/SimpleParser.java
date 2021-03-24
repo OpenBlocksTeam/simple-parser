@@ -148,7 +148,7 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
 
         } catch (JSONException e) {
             e.printStackTrace();
-            
+
             throw new ParseException("JSONObject failed to parse layout data: " + e.getMessage());
         }
 
@@ -189,6 +189,30 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
     @NonNull
     @Override
     public OpenBlocksProjectMetadata parseMetadata(OpenBlocksRawProject project) throws ParseException {
+        String metadata_data = null;
+
+        for (OpenBlocksFile file : project.files) {
+            if (file.name.equals("metadata")) {
+                metadata_data = new String(file.data, StandardCharsets.UTF_8);
+                break;
+            }
+        }
+
+        if (metadata_data == null) {
+            throw new ParseException("metadata file doesn't exist");
+        }
+
+        try {
+            JSONObject metadata = new JSONObject(metadata_data);
+            String name = metadata.getString("name");
+            String package_name = metadata.getString("package_name");
+            String version_name = metadata.getString("version_name");
+            int version_code = metadata.getInt("version_code");
+
+            return new OpenBlocksProjectMetadata(name, package_name, version_name, version_code);
+
+        } catch (JSONException ignored) {}
+        
         return null;
     }
 
