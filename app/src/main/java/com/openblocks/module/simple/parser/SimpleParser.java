@@ -138,13 +138,14 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
             ArrayList<BlockCode> block_codes = new ArrayList<>();
 
             JSONObject code = new JSONObject(code_data);
+            String block_collection_name = code.getString("block_collection");
             JSONArray blocks = code.getJSONArray("blocks");
 
             for (int i = 0; i < blocks.length(); i++) {
                 block_codes.add(parseBlockCode(blocks.getJSONObject(i)));
             }
 
-            parsed_code = new OpenBlocksCode(null, block_codes);
+            parsed_code = new OpenBlocksCode(block_collection_name, block_codes);
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -274,7 +275,7 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
     private String serializeCode(OpenBlocksCode code) throws JSONException {
         JSONObject object = new JSONObject();
 
-        // TODO: 3/24/21 Remove code_templates, because BlockCollection's ParseBlockTask cannot be serialized
+        object.put("block_collection", code.block_collection_name);
 
         JSONArray array = new JSONArray();
 
