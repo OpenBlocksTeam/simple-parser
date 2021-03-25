@@ -1,0 +1,13 @@
+{
+  "jar": "SimpleParser.jar",
+  "modules": [
+    {
+      "name": "SimpleParser",
+      "description": "A simple parser module used for testing",
+      "classpath": "com.openblocks.modules.simple.parser.SimpleParser",
+      "version": 1,
+      "lib_version": 1,
+      "type": "PROJECT_PARSER"
+    }
+  ]
+}
