@@ -213,8 +213,9 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
             return new OpenBlocksProjectMetadata(name, package_name, version_name, version_code);
 
         } catch (JSONException ignored) {}
-        
-        return null;
+
+        // ok return nulls instead
+        return new OpenBlocksProjectMetadata(null, null, null, 0);
     }
 
     @NonNull
