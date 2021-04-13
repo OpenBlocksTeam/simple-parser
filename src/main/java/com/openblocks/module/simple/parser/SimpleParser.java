@@ -2,8 +2,6 @@ package com.openblocks.module.simple.parser;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-
 import com.openblocks.moduleinterface.OpenBlocksModule;
 import com.openblocks.moduleinterface.callbacks.Logger;
 import com.openblocks.moduleinterface.exceptions.ParseException;
@@ -156,9 +154,11 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
     private BlockCode parseBlockCode(JSONObject object) throws JSONException {
         BlockCode blockCode = null;
         String opcode;
+        int color;
         ArrayList<String> params = new ArrayList<>();
 
         opcode = object.getString("opcode");
+        color = object.getInt("color");
 
         JSONArray params_array = object.getJSONArray("params");
 
@@ -175,10 +175,10 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
                 childs.add(parseBlockCode(childs_array.getJSONObject(i)));
             }
 
-            blockCode = new BlockCodeNest(opcode, params, childs);
+            blockCode = new BlockCodeNest(opcode, color, params, childs);
             
         } else {
-            blockCode = new BlockCode(opcode, params);
+            blockCode = new BlockCode(opcode, color, params);
         }
 
         return blockCode;
@@ -290,6 +290,7 @@ public class SimpleParser implements OpenBlocksModule.ProjectParser {
 
         block_json.put("opcode", block.opcode);
         block_json.put("params", new JSONArray(block.parameters));
+        block_json.put("color", block.color);
 
         if (block instanceof BlockCodeNest) {
             JSONArray childs = new JSONArray();
