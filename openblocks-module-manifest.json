@@ -1,5 +1,5 @@
 {
-  "jar": "SimpleParser.jar",
+  "jar": "out.jar",
   "modules": [
     {
       "name": "SimpleParser",
